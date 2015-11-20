@@ -26,7 +26,7 @@ import org.davidjhartman.InformaticaMapping;
 
 public class GenerateInformaticaMappingXMind {
 	 //public static final String xmlFile="X:\\BI&A Technical\\Templates\\Informatica\\m_IU_T2_TYPE2_TEMPLATE.XML";
-	 public static final String xmlFile="workflow.xml";
+	 public static final String xmlFile="XML_Files\\workflow.xml";
 	 
 	 private static final String outXmindFileName = "Z:\\Users\\dhartman\\Dropbox\\infa.xmind";
 	 public static Node repositoryNode;
