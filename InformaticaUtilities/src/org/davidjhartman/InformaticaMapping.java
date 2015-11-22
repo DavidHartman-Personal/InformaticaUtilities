@@ -22,6 +22,4 @@ public class InformaticaMapping {
 	public void setFolderName(String folderName) {
 		FolderName = folderName;
 	}
-
-  
 }

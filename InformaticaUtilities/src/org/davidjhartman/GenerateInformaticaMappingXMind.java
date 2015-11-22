@@ -10,6 +10,7 @@ import java.util.zip.ZipOutputStream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.*;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -34,6 +35,7 @@ public class GenerateInformaticaMappingXMind {
 	 public static List<String> folderNames = new ArrayList<String>();
 	 public static List<Node> folderNodeList = new ArrayList<Node>();
 	 public static List<Node> folderObjects = new ArrayList<Node>();
+	 public static InformaticaWorkflow infaWorkflow = new InformaticaWorkflow();
 	 public static IWorkbook workbook;
 	 
 	 public static void setFolderNodeList(Node inRepositoryNode) {
@@ -57,15 +59,7 @@ public class GenerateInformaticaMappingXMind {
 		 } else {
 			 System.out.println("Error in finding Repository Node"); 
 		 }
-//		 for (int i = 0; i < inNodeList.getLength(); i++) {
-//             Node node = inNodeList.item(i);
-//             if (node.getNodeType() == Node.ELEMENT_NODE && node.getNodeName() == "REPOSITORY") {
-//               repositoryNode=inNodeList.item(i);
-//               setFolderNodeList(repositoryNode);
-//               //Element elem = (Element) node;
-//               //infaMap.setRepositoryName(node.getAttributes().getNamedItem("NAME").getNodeValue());
-//             }
-//         } // end of for loop on nodes
+
 	 }
 	 public static void createXmindFile() throws Exception {
 			workbook = Core.getWorkbookBuilder().createWorkbook();
@@ -83,16 +77,45 @@ public class GenerateInformaticaMappingXMind {
 	            System.out.println("Saved workbook: " + outXmindFileName);
 	        }
 	 }
-	 public static void addFolders() {
+	 public static void addFolders() throws Exception {
 		 ITopic root = workbook.getPrimarySheet().getRootTopic();
 		 for (String fldrName : folderNames) {
 	        	ITopic curTopic = workbook.createTopic();
 	        	curTopic.setTitleText(fldrName);
+	        	//addWorkflow(curTopic);
 	        	addFolderObjects(curTopic);
 	        	root.add(curTopic);
 	     }
 	 }
-	 public static void addFolderObjects(ITopic inFolderTopic) {
+	 public static void addWorkflow(ITopic inFolderTopic, Node inFolderNode) throws Exception {
+		 //ITopic root = workbook.getPrimarySheet().getRootTopic();
+		 //go through each folder node
+         String xpathExp = "FOLDER/SESSION[@NAME='s_m_I_FF_STG_CNTRY_PRGRM']/SESSIONEXTENSION";
+         XPath xPath = XPathFactory.newInstance().newXPath();
+         //String wfName = xPath.compile(xpathExp).evaluate(inFolderNode);
+         //read an xml node using xpath
+         System.out.println("In folder: " + repositoryNode.getNodeName());
+         NodeList nodes = (NodeList) xPath.compile(xpathExp).evaluate(repositoryNode, XPathConstants.NODESET);
+         System.out.println("There are Workflow Variables for:" + nodes.getLength());  //getAttributes().getNamedItem("NAME")); 
+         if (nodes.getLength() != 0) {
+        	 //we have variables
+        	 ITopic wkflowAttr = workbook.createTopic();
+        	 wkflowAttr.setTitleText("Attributes");
+	         for (int nodeItr = 0;nodeItr < nodes.getLength();nodeItr++) {
+	        	 System.out.println(nodes.item(nodeItr).getAttributes().getNamedItem("NAME").getNodeValue()+"\t"+
+	        			 nodes.item(nodeItr).getAttributes().getNamedItem("TYPE").getNodeValue());
+	        	 ITopic attrTopic = workbook.createTopic();
+	        	 attrTopic.setTitleText(nodes.item(nodeItr).getAttributes().getNamedItem("NAME").getNodeValue());
+	        	 ITopic attrValue = workbook.createTopic();
+	        	 attrValue.setTitleText(nodes.item(nodeItr).getAttributes().getNamedItem("TYPE").getNodeValue());
+	        	 attrTopic.add(attrValue);
+	        	// attrTopic.addLabel(nodes.item(nodeItr).getAttributes().getNamedItem("VALUE").getNodeValue());
+	        	 wkflowAttr.add(attrTopic);
+	         }
+	         inFolderTopic.add(wkflowAttr);
+         }
+	 }
+	 public static void addFolderObjects(ITopic inFolderTopic) throws Exception {
 		 //ITopic root = workbook.getPrimarySheet().getRootTopic();
 		 //go through each folder node
 		 for (Node fldrNode : folderNodeList) {
@@ -104,6 +127,9 @@ public class GenerateInformaticaMappingXMind {
 					String objectName = node.getAttributes().getNamedItem("NAME").getNodeValue();
 					String objectType = node.getNodeName() ;
 		        	ITopic curTopic = workbook.createTopic();
+		        	if (objectType == "WORKFLOW") {
+		        		addWorkflow(curTopic,fldrNode.getChildNodes().item(j));
+		        	}
 		        	curTopic.setTitleText(objectName);
 		        	curTopic.addLabel(objectType);
 		        	folderRootNode.add(curTopic);
